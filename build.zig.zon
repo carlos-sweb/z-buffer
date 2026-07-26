@@ -1,0 +1,14 @@
+.{
+    .name = .zbuffer,
+    .version = "0.1.0",
+    .minimum_zig_version = "0.16.0",
+    .fingerprint = 0x55ec014ab0c2416d,
+    .description = "Thin, general-purpose fixed-length byte buffer with typed and endian-aware views (ArrayBuffer/DataView/TypedArray storage layer)",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src/",
+        "README.md",
+    },
+    .dependencies = .{},
+}
