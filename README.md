@@ -3,7 +3,7 @@
 [![Zig Version](https://img.shields.io/badge/zig-0.16-orange.svg)](https://ziglang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-A general-purpose, fixed-length byte buffer with typed and endian-aware views — part of the [z-*](https://github.com/carlos-sweb) micro-library ecosystem. Nothing JS-specific lives here (no `JSValue`, no engine coupling): a plain sibling library, reusable anywhere ArrayBuffer/DataView/TypedArray-shaped storage is useful. Wiring this into the z-* JS engine (a `z-value` JSValue variant, `z-interpreter` constructors/prototype methods/GC) is a separate, not-yet-started phase.
+A general-purpose, fixed-length byte buffer with typed and endian-aware views — part of the [z-*](https://github.com/carlos-sweb) micro-library ecosystem. Nothing JS-specific lives here (no `JSValue`, no engine coupling): a plain sibling library, reusable anywhere ArrayBuffer/DataView/TypedArray-shaped storage is useful. Wiring this into the z-* JS engine lives entirely downstream in [z-value](https://github.com/carlos-sweb/z-value) (the `array_buffer`/`data_view`/`typed_array` `JSValue` variants) and [z-interpreter](https://github.com/carlos-sweb/z-interpreter) (constructors, GC, and the full `%TypedArray%.prototype` method surface — `map`/`filter`/`forEach`/`slice`/`set`/`subarray`/`sort`/... reusing this repo's `TypedArrayView`/`DataView` get/set underneath) — this repo itself never changed to support it, by design (see [Design](#design)).
 
 ## Scope
 
