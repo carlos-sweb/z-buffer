@@ -66,6 +66,15 @@ test "byte_offset not a multiple of the element size is Misaligned" {
     _ = try zbuffer.Int32Array.init(&buf, 4, null);
 }
 
+test "auto-length (len omitted) requires the remaining bytes divide exactly -- a trailing partial element is OutOfBounds, not a silent truncation" {
+    var buf = try newBuf(6); // 6 bytes: not a whole number of i32 (4-byte) elements
+    defer buf.deinit();
+    try std.testing.expectError(error.OutOfBounds, zbuffer.Int32Array.init(&buf, 0, null));
+    // An explicit, in-range length is unaffected -- only the auto-length
+    // path enforces exact divisibility.
+    _ = try zbuffer.Int32Array.init(&buf, 0, 1);
+}
+
 test "out-of-range length/index is OutOfBounds" {
     var buf = try newBuf(8);
     defer buf.deinit();

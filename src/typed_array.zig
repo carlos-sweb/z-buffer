@@ -29,16 +29,25 @@ pub fn TypedArrayView(comptime T: type) type {
 
         /// `len` omitted (null) -> covers every whole element from
         /// `byte_offset` to the end of the buffer (spec: `new
-        /// Int32Array(buffer, byteOffset)` with no length argument).
-        /// Real spec RangeError if `byte_offset` isn't a multiple of
-        /// the element size -- `error.Misaligned` here.
+        /// Int32Array(buffer, byteOffset)` with no length argument) --
+        /// but the remaining bytes must divide EXACTLY into whole
+        /// elements; a trailing partial element is `error.OutOfBounds`
+        /// (real spec: `new Int32Array(new ArrayBuffer(6))` is a
+        /// RangeError, not a silently-truncated 1-element view -- a
+        /// truncating auto-length would silently drop trailing bytes
+        /// for ANY caller, not just a JS-specific rule). Real spec
+        /// RangeError if `byte_offset` isn't a multiple of the element
+        /// size -- `error.Misaligned` here.
         pub fn init(buffer: *ArrayBuffer, byte_offset: usize, len: ?usize) BufferError!Self {
             if (byte_offset % elem_size != 0) return error.Misaligned;
             const avail = buffer.byteLength();
             if (byte_offset > avail) return error.OutOfBounds;
-            const remaining_elems = (avail - byte_offset) / elem_size;
-            const n = len orelse remaining_elems;
-            if (n > remaining_elems) return error.OutOfBounds;
+            const remaining_bytes = avail - byte_offset;
+            const n = len orelse blk: {
+                if (remaining_bytes % elem_size != 0) return error.OutOfBounds;
+                break :blk remaining_bytes / elem_size;
+            };
+            if (n > remaining_bytes / elem_size) return error.OutOfBounds;
             return .{ .buffer = buffer, .byte_offset = byte_offset, .len = n };
         }
 
