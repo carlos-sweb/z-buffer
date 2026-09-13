@@ -20,6 +20,12 @@ pub const BufferError = error{
 pub const ArrayBuffer = struct {
     allocator: Allocator,
     bytes: []u8,
+    /// Distinguishes `SharedArrayBuffer` from `ArrayBuffer` for the
+    /// engine layer (prototype dispatch) -- storage-wise identical,
+    /// since this library models neither's cross-agent semantics (see
+    /// the module doc comment). Defaults false so every existing call
+    /// site is unaffected.
+    is_shared: bool = false,
 
     /// Allocates a new zero-initialized buffer of `byte_length` bytes
     /// (spec: ArrayBuffer contents start zeroed).
