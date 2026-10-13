@@ -16,15 +16,23 @@ const std = @import("std");
 const array_buffer = @import("array_buffer.zig");
 const codec = @import("codec.zig");
 const ArrayBuffer = array_buffer.ArrayBuffer;
+/// Errors returned by view construction and checked element access.
 pub const BufferError = array_buffer.BufferError;
 
+/// Creates a non-owning native-endian view for an integer or floating-point T.
+/// The owner must remain valid at a stable address for the lifetime of the view.
+/// Preserve the constructor-established bounds when using the public fields.
 pub fn TypedArrayView(comptime T: type) type {
     return struct {
+        /// Owner of the backing allocation.
         buffer: *ArrayBuffer,
+        /// Starting byte offset in the owner, aligned to elem_size.
         byte_offset: usize,
-        len: usize, // element count
+        /// Number of elements in the view.
+        len: usize,
 
         const Self = @This();
+        /// Storage size of one element, in bytes.
         pub const elem_size = @sizeOf(T);
 
         /// `len` omitted (null) -> covers every whole element from
@@ -51,16 +59,19 @@ pub fn TypedArrayView(comptime T: type) type {
             return .{ .buffer = buffer, .byte_offset = byte_offset, .len = n };
         }
 
+        /// Returns the length of the view in bytes.
         pub fn byteLength(self: Self) usize {
             return self.len * elem_size;
         }
 
+        /// Reads the element at index; returns OutOfBounds if index >= len.
         pub fn get(self: Self, index: usize) BufferError!T {
             if (index >= self.len) return error.OutOfBounds;
             const off = self.byte_offset + index * elem_size;
             return codec.readNum(T, self.buffer.bytes[off..], codec.native_endian);
         }
 
+        /// Writes one element at index; returns OutOfBounds if index >= len.
         pub fn set(self: Self, index: usize, value: T) BufferError!void {
             if (index >= self.len) return error.OutOfBounds;
             const off = self.byte_offset + index * elem_size;

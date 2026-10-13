@@ -1,0 +1,61 @@
+name: Documentation
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+      - name: Install Zig 0.17.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 https://ziglang.org/download/0.17.0/zig-x86_64-linux-0.17.0.tar.xz -o "$RUNNER_TEMP/zig.tar.xz"
+          echo "1cbe9df9f27e6b78d14ccbca43b6703a404ef79ef1c463de901d7f088d4e2026  $RUNNER_TEMP/zig.tar.xz" | sha256sum --check
+          tar -xJf "$RUNNER_TEMP/zig.tar.xz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/zig-x86_64-linux-0.17.0" >> "$GITHUB_PATH"
+      - name: Check formatting
+        run: zig fmt --check build.zig build.zig.zon src tests
+      - name: Run tests
+        run: zig build test --summary all
+      - name: Generate documentation
+        run: zig build docs --summary all
+      - name: Check generated documentation assets
+        run: |
+          test -s zig-out/index.html
+          test -s zig-out/docs/index.html
+          test -s zig-out/docs/main.js
+          test -s zig-out/docs/main.wasm
+          test -s zig-out/docs/sources.tar
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload documentation site
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: zig-out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy documentation site
+        id: deployment
+        uses: actions/deploy-pages@v4

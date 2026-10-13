@@ -14,20 +14,20 @@ const std = @import("std");
 /// Callers must pass `bytes.len >= @sizeOf(T)`; this is an internal
 /// helper, bounds are the public API's (DataView/TypedArrayView)
 /// responsibility, already checked once at that boundary.
-pub fn readNum(comptime T: type, bytes: []const u8, endian: std.builtin.Endian) T {
+pub fn readNum(comptime T: type, bytes: []const u8, endian: std.lang.Endian) T {
     return switch (@typeInfo(T)) {
         .int => std.mem.readInt(T, bytes[0..@sizeOf(T)], endian),
-        .float => |f| @bitCast(std.mem.readInt(std.meta.Int(.unsigned, f.bits), bytes[0..@sizeOf(T)], endian)),
+        .float => |f| @bitCast(std.mem.readInt(@Int(.unsigned, f.bits), bytes[0..@sizeOf(T)], endian)),
         else => @compileError("readNum: unsupported type " ++ @typeName(T)),
     };
 }
 
 /// Same bounds contract as `readNum`.
-pub fn writeNum(comptime T: type, bytes: []u8, value: T, endian: std.builtin.Endian) void {
+pub fn writeNum(comptime T: type, bytes: []u8, value: T, endian: std.lang.Endian) void {
     switch (@typeInfo(T)) {
         .int => std.mem.writeInt(T, bytes[0..@sizeOf(T)], value, endian),
         .float => |f| {
-            const Bits = std.meta.Int(.unsigned, f.bits);
+            const Bits = @Int(.unsigned, f.bits);
             const bits: Bits = @bitCast(value);
             std.mem.writeInt(Bits, bytes[0..@sizeOf(T)], bits, endian);
         },
@@ -35,4 +35,4 @@ pub fn writeNum(comptime T: type, bytes: []u8, value: T, endian: std.builtin.End
     }
 }
 
-pub const native_endian = @import("builtin").cpu.arch.endian();
+pub const native_endian = std.lang.Endian.native;

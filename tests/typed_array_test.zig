@@ -23,10 +23,10 @@ test "Int32Array roundtrips and covers the full buffer when len is omitted" {
 
 test "every integer element kind roundtrips its own type's min/max" {
     const kinds = .{
-        .{ zbuffer.Int8Array, i8 },       .{ zbuffer.Uint8Array, u8 },
-        .{ zbuffer.Int16Array, i16 },     .{ zbuffer.Uint16Array, u16 },
-        .{ zbuffer.Int32Array, i32 },     .{ zbuffer.Uint32Array, u32 },
-        .{ zbuffer.BigInt64Array, i64 },  .{ zbuffer.BigUint64Array, u64 },
+        .{ zbuffer.Int8Array, i8 },      .{ zbuffer.Uint8Array, u8 },
+        .{ zbuffer.Int16Array, i16 },    .{ zbuffer.Uint16Array, u16 },
+        .{ zbuffer.Int32Array, i32 },    .{ zbuffer.Uint32Array, u32 },
+        .{ zbuffer.BigInt64Array, i64 }, .{ zbuffer.BigUint64Array, u64 },
     };
     inline for (kinds) |pair| {
         const Kind = pair[0];
@@ -95,7 +95,7 @@ test "TypedArrayView (native endian) and DataView (explicit native endian) agree
     try view.set(0, 0x11223344);
 
     const dv = try DataView.init(&buf, 0, null);
-    const is_little = @import("builtin").cpu.arch.endian() == .little;
+    const is_little = std.lang.Endian.native == .little;
     const via_dv = try dv.getInt32(0, is_little);
     try std.testing.expectEqual(@as(i32, 0x11223344), via_dv);
 }
