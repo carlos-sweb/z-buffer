@@ -31,6 +31,8 @@ pub const ArrayBuffer = struct {
     /// the module doc comment). Defaults false so every existing call
     /// site is unaffected.
     is_shared: bool = false,
+    /// True once `detach()` has released `bytes`.
+    detached: bool = false,
 
     /// Allocates a new zero-initialized buffer of `byte_length` bytes
     /// (spec: ArrayBuffer contents start zeroed).
@@ -42,7 +44,21 @@ pub const ArrayBuffer = struct {
 
     /// Releases the allocation. Invalidates all views referencing this buffer.
     pub fn deinit(self: *ArrayBuffer) void {
+        if (!self.detached) self.allocator.free(self.bytes);
+    }
+
+    /// Detaches this buffer (ECMA-262 DetachArrayBuffer): frees backing bytes
+    /// and resets length to 0. Idempotent.
+    pub fn detach(self: *ArrayBuffer) void {
+        if (self.detached) return;
         self.allocator.free(self.bytes);
+        self.bytes = &.{};
+        self.detached = true;
+    }
+
+    /// Returns whether this buffer has been detached.
+    pub fn isDetached(self: *const ArrayBuffer) bool {
+        return self.detached;
     }
 
     /// Returns the allocation length in bytes.
@@ -63,3 +79,15 @@ pub const ArrayBuffer = struct {
         return out;
     }
 };
+
+test "ArrayBuffer.detach releases storage and marks detached" {
+    var buf = try ArrayBuffer.init(std.testing.allocator, 8);
+    defer buf.deinit();
+    try std.testing.expect(!buf.isDetached());
+    try std.testing.expectEqual(@as(usize, 8), buf.byteLength());
+    buf.detach();
+    try std.testing.expect(buf.isDetached());
+    try std.testing.expectEqual(@as(usize, 0), buf.byteLength());
+    buf.detach();
+    try std.testing.expect(buf.isDetached());
+}
