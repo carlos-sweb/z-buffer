@@ -64,17 +64,19 @@ pub fn TypedArrayView(comptime T: type) type {
             return self.len * elem_size;
         }
 
-        /// Reads the element at index; returns OutOfBounds if index >= len.
+        /// Reads the element at index; returns OutOfBounds if index >= len or buffer is detached.
         pub fn get(self: Self, index: usize) BufferError!T {
-            if (index >= self.len) return error.OutOfBounds;
+            if (self.buffer.isDetached() or index >= self.len) return error.OutOfBounds;
             const off = self.byte_offset + index * elem_size;
+            if (off + elem_size > self.buffer.bytes.len) return error.OutOfBounds;
             return codec.readNum(T, self.buffer.bytes[off..], codec.native_endian);
         }
 
-        /// Writes one element at index; returns OutOfBounds if index >= len.
+        /// Writes one element at index; returns OutOfBounds if index >= len or buffer is detached.
         pub fn set(self: Self, index: usize, value: T) BufferError!void {
-            if (index >= self.len) return error.OutOfBounds;
+            if (self.buffer.isDetached() or index >= self.len) return error.OutOfBounds;
             const off = self.byte_offset + index * elem_size;
+            if (off + elem_size > self.buffer.bytes.len) return error.OutOfBounds;
             codec.writeNum(T, self.buffer.bytes[off..], value, codec.native_endian);
         }
     };

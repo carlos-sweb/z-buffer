@@ -44,8 +44,10 @@ pub const DataView = struct {
     }
 
     fn window(self: DataView, offset: usize, n: usize) BufferError![]u8 {
-        if (offset + n > self.byte_length) return error.OutOfBounds;
-        return self.buffer.bytes[self.byte_offset + offset ..];
+        if (self.buffer.isDetached() or offset + n > self.byte_length) return error.OutOfBounds;
+        const start = self.byte_offset + offset;
+        if (start + n > self.buffer.bytes.len) return error.OutOfBounds;
+        return self.buffer.bytes[start..];
     }
 
     fn endianOf(little: bool) std.lang.Endian {
